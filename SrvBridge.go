@@ -4,9 +4,10 @@
 package main
 
 import (
-  . "github.com/dmznlin/znlib-go/znlib"
+	. "SrvBridge/src"
 )
 
 func main() {
-  Info("web server starting")
+	StartThriftService()
+    //启动thrift-rpc服务
 }

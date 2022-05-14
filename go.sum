@@ -3,8 +3,8 @@ github.com/apache/thrift v0.16.0/go.mod h1:PHK3hniurgQaNMZYaCLEqXKsYK8upmhPbmdP2
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
-github.com/dmznlin/znlib-go v0.0.2-0.20220511045511-d82311ff079c h1:ZW3PJEuTirCnOpuVVM/aKbPVwV9rFizHPYHxD+nP4y8=
-github.com/dmznlin/znlib-go v0.0.2-0.20220511045511-d82311ff079c/go.mod h1:A4kw6cy8y338Cayhbm/Z94JxhKxOtS1voN7iiTfCuN8=
+github.com/dmznlin/znlib-go v0.0.2-0.20220514035921-d1635b44b808 h1:9dE97CPvrVQxteT3nj2UboDMwcguavGe/lRB+zPLPUI=
+github.com/dmznlin/znlib-go v0.0.2-0.20220514035921-d1635b44b808/go.mod h1:A4kw6cy8y338Cayhbm/Z94JxhKxOtS1voN7iiTfCuN8=
 github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 h1:Ghm4eQYC0nEPnSJdVkTrXpu9KtoVCSo1hg7mtI7G9KU=
 github.com/go-ini/ini v1.66.4 h1:dKjMqkcbkzfddhIhyglTPgMoJnkvmG+bSLrU9cTHc5M=
 github.com/go-ini/ini v1.66.4/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3Ies8=

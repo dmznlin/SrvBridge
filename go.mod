@@ -4,11 +4,11 @@ go 1.18
 
 require (
 	github.com/apache/thrift v0.16.0
-	github.com/dmznlin/znlib-go v0.0.2-0.20220511045511-d82311ff079c
+	github.com/dmznlin/znlib-go v0.0.2-0.20220514035921-d1635b44b808
+	github.com/go-ini/ini v1.66.4
 )
 
 require (
-	github.com/go-ini/ini v1.66.4 // indirect
 	github.com/lestrrat/go-file-rotatelogs v0.0.0-20180223000712-d3151e2a480f // indirect
 	github.com/lestrrat/go-strftime v0.0.0-20180220042222-ba3bf9c1d042 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
