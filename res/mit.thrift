@@ -15,4 +15,5 @@ struct ActionParam {
 
 service Business {
     ActionResult Action(1:ActionParam param);
+    oneway void ActionClient(1: ActionParam param);
 }

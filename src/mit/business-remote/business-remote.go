@@ -23,6 +23,7 @@ func Usage() {
   flag.PrintDefaults()
   fmt.Fprintln(os.Stderr, "\nFunctions:")
   fmt.Fprintln(os.Stderr, "  ActionResult Action(ActionParam param)")
+  fmt.Fprintln(os.Stderr, "  void ActionClient(ActionParam param)")
   fmt.Fprintln(os.Stderr)
   os.Exit(0)
 }
@@ -150,24 +151,49 @@ func main() {
       fmt.Fprintln(os.Stderr, "Action requires 1 args")
       flag.Usage()
     }
-    arg6 := flag.Arg(1)
-    mbTrans7 := thrift.NewTMemoryBufferLen(len(arg6))
-    defer mbTrans7.Close()
-    _, err8 := mbTrans7.WriteString(arg6)
-    if err8 != nil {
+    arg7 := flag.Arg(1)
+    mbTrans8 := thrift.NewTMemoryBufferLen(len(arg7))
+    defer mbTrans8.Close()
+    _, err9 := mbTrans8.WriteString(arg7)
+    if err9 != nil {
       Usage()
       return
     }
-    factory9 := thrift.NewTJSONProtocolFactory()
-    jsProt10 := factory9.GetProtocol(mbTrans7)
+    factory10 := thrift.NewTJSONProtocolFactory()
+    jsProt11 := factory10.GetProtocol(mbTrans8)
     argvalue0 := mit.NewActionParam()
-    err11 := argvalue0.Read(context.Background(), jsProt10)
-    if err11 != nil {
+    err12 := argvalue0.Read(context.Background(), jsProt11)
+    if err12 != nil {
       Usage()
       return
     }
     value0 := argvalue0
     fmt.Print(client.Action(context.Background(), value0))
+    fmt.Print("\n")
+    break
+  case "ActionClient":
+    if flag.NArg() - 1 != 1 {
+      fmt.Fprintln(os.Stderr, "ActionClient requires 1 args")
+      flag.Usage()
+    }
+    arg13 := flag.Arg(1)
+    mbTrans14 := thrift.NewTMemoryBufferLen(len(arg13))
+    defer mbTrans14.Close()
+    _, err15 := mbTrans14.WriteString(arg13)
+    if err15 != nil {
+      Usage()
+      return
+    }
+    factory16 := thrift.NewTJSONProtocolFactory()
+    jsProt17 := factory16.GetProtocol(mbTrans14)
+    argvalue0 := mit.NewActionParam()
+    err18 := argvalue0.Read(context.Background(), jsProt17)
+    if err18 != nil {
+      Usage()
+      return
+    }
+    value0 := argvalue0
+    fmt.Print(client.ActionClient(context.Background(), value0))
     fmt.Print("\n")
     break
   case "":

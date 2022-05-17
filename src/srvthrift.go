@@ -1,5 +1,9 @@
 package srvbridge
 
+/******************************************************************************
+作者: dmzn@163.com 2022-05-14
+描述: service for thrift
+******************************************************************************/
 import (
 	. "SrvBridge/src/mit"
 	"context"
@@ -7,14 +11,8 @@ import (
 	. "github.com/dmznlin/znlib-go/znlib"
 	inifile "github.com/go-ini/ini"
 	"net"
-	"os"
 	"strconv"
 )
-
-/******************************************************************************
-作者: dmzn@163.com 2022-05-14
-描述: service for thrift
-******************************************************************************/
 
 type thriftCfg struct {
 	localIP   string
@@ -53,8 +51,13 @@ func (ta *thriftAction) Action(ctx context.Context, param *ActionParam) (_r *Act
 	return &ActionResult_{
 		Res:  true,
 		Code: 0,
-		Data: "",
+		Data: "i am server",
 	}, nil
+}
+
+func (ta *thriftAction)  ActionClient(ctx context.Context, param *ActionParam) (_err error){
+	Info(param.Data)
+	return nil
 }
 
 func StartThriftService() {
@@ -74,7 +77,7 @@ func StartThriftService() {
 	serverTransport, err := thrift.NewTServerSocket(cfg.localAddr)
 	if err != nil {
 		Error("thrift.NewTServerSocket failure: " + err.Error())
-		os.Exit(1)
+		return
 	}
 
 	handler := &thriftAction{}

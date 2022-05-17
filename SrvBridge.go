@@ -9,5 +9,5 @@ import (
 
 func main() {
 	StartThriftService()
-    //启动thrift-rpc服务
+	//启动thrift-rpc服务
 }

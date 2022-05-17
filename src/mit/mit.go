@@ -411,6 +411,9 @@ type Business interface {
   // Parameters:
   //  - Param
   Action(ctx context.Context, param *ActionParam) (_r *ActionResult_, _err error)
+  // Parameters:
+  //  - Param
+  ActionClient(ctx context.Context, param *ActionParam) (_err error)
 }
 
 type BusinessClient struct {
@@ -466,6 +469,18 @@ func (p *BusinessClient) Action(ctx context.Context, param *ActionParam) (_r *Ac
   return nil, thrift.NewTApplicationException(thrift.MISSING_RESULT, "Action failed: unknown result")
 }
 
+// Parameters:
+//  - Param
+func (p *BusinessClient) ActionClient(ctx context.Context, param *ActionParam) (_err error) {
+  var _args4 BusinessActionClientArgs
+  _args4.Param = param
+  p.SetLastResponseMeta_(thrift.ResponseMeta{})
+  if _, err := p.Client_().Call(ctx, "ActionClient", &_args4, nil); err != nil {
+    return err
+  }
+  return nil
+}
+
 type BusinessProcessor struct {
   processorMap map[string]thrift.TProcessorFunction
   handler Business
@@ -486,9 +501,10 @@ func (p *BusinessProcessor) ProcessorMap() map[string]thrift.TProcessorFunction 
 
 func NewBusinessProcessor(handler Business) *BusinessProcessor {
 
-  self4 := &BusinessProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
-  self4.processorMap["Action"] = &businessProcessorAction{handler:handler}
-return self4
+  self5 := &BusinessProcessor{handler:handler, processorMap:make(map[string]thrift.TProcessorFunction)}
+  self5.processorMap["Action"] = &businessProcessorAction{handler:handler}
+  self5.processorMap["ActionClient"] = &businessProcessorActionClient{handler:handler}
+return self5
 }
 
 func (p *BusinessProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
@@ -499,12 +515,12 @@ func (p *BusinessProcessor) Process(ctx context.Context, iprot, oprot thrift.TPr
   }
   iprot.Skip(ctx, thrift.STRUCT)
   iprot.ReadMessageEnd(ctx)
-  x5 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
+  x6 := thrift.NewTApplicationException(thrift.UNKNOWN_METHOD, "Unknown function " + name)
   oprot.WriteMessageBegin(ctx, name, thrift.EXCEPTION, seqId)
-  x5.Write(ctx, oprot)
+  x6.Write(ctx, oprot)
   oprot.WriteMessageEnd(ctx)
   oprot.Flush(ctx)
-  return false, x5
+  return false, x6
 
 }
 
@@ -585,6 +601,30 @@ func (p *businessProcessorAction) Process(ctx context.Context, seqId int32, ipro
     return
   }
   return true, err
+}
+
+type businessProcessorActionClient struct {
+  handler Business
+}
+
+func (p *businessProcessorActionClient) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+  args := BusinessActionClientArgs{}
+  var err2 error
+  if err2 = args.Read(ctx, iprot); err2 != nil {
+    iprot.ReadMessageEnd(ctx)
+    return false, thrift.WrapTException(err2)
+  }
+  iprot.ReadMessageEnd(ctx)
+
+  tickerCancel := func() {}
+  _ = tickerCancel
+
+  if err2 = p.handler.ActionClient(ctx, args.Param); err2 != nil {
+    tickerCancel()
+    return true, thrift.WrapTException(err2)
+  }
+  tickerCancel()
+  return true, nil
 }
 
 
@@ -788,6 +828,104 @@ func (p *BusinessActionResult) String() string {
     return "<nil>"
   }
   return fmt.Sprintf("BusinessActionResult(%+v)", *p)
+}
+
+// Attributes:
+//  - Param
+type BusinessActionClientArgs struct {
+  Param *ActionParam `thrift:"param,1" db:"param" json:"param"`
+}
+
+func NewBusinessActionClientArgs() *BusinessActionClientArgs {
+  return &BusinessActionClientArgs{}
+}
+
+var BusinessActionClientArgs_Param_DEFAULT *ActionParam
+func (p *BusinessActionClientArgs) GetParam() *ActionParam {
+  if !p.IsSetParam() {
+    return BusinessActionClientArgs_Param_DEFAULT
+  }
+return p.Param
+}
+func (p *BusinessActionClientArgs) IsSetParam() bool {
+  return p.Param != nil
+}
+
+func (p *BusinessActionClientArgs) Read(ctx context.Context, iprot thrift.TProtocol) error {
+  if _, err := iprot.ReadStructBegin(ctx); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read error: ", p), err)
+  }
+
+
+  for {
+    _, fieldTypeId, fieldId, err := iprot.ReadFieldBegin(ctx)
+    if err != nil {
+      return thrift.PrependError(fmt.Sprintf("%T field %d read error: ", p, fieldId), err)
+    }
+    if fieldTypeId == thrift.STOP { break; }
+    switch fieldId {
+    case 1:
+      if fieldTypeId == thrift.STRUCT {
+        if err := p.ReadField1(ctx, iprot); err != nil {
+          return err
+        }
+      } else {
+        if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+          return err
+        }
+      }
+    default:
+      if err := iprot.Skip(ctx, fieldTypeId); err != nil {
+        return err
+      }
+    }
+    if err := iprot.ReadFieldEnd(ctx); err != nil {
+      return err
+    }
+  }
+  if err := iprot.ReadStructEnd(ctx); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+  }
+  return nil
+}
+
+func (p *BusinessActionClientArgs)  ReadField1(ctx context.Context, iprot thrift.TProtocol) error {
+  p.Param = &ActionParam{}
+  if err := p.Param.Read(ctx, iprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error reading struct: ", p.Param), err)
+  }
+  return nil
+}
+
+func (p *BusinessActionClientArgs) Write(ctx context.Context, oprot thrift.TProtocol) error {
+  if err := oprot.WriteStructBegin(ctx, "ActionClient_args"); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err) }
+  if p != nil {
+    if err := p.writeField1(ctx, oprot); err != nil { return err }
+  }
+  if err := oprot.WriteFieldStop(ctx); err != nil {
+    return thrift.PrependError("write field stop error: ", err) }
+  if err := oprot.WriteStructEnd(ctx); err != nil {
+    return thrift.PrependError("write struct stop error: ", err) }
+  return nil
+}
+
+func (p *BusinessActionClientArgs) writeField1(ctx context.Context, oprot thrift.TProtocol) (err error) {
+  if err := oprot.WriteFieldBegin(ctx, "param", thrift.STRUCT, 1); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field begin error 1:param: ", p), err) }
+  if err := p.Param.Write(ctx, oprot); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T error writing struct: ", p.Param), err)
+  }
+  if err := oprot.WriteFieldEnd(ctx); err != nil {
+    return thrift.PrependError(fmt.Sprintf("%T write field end error 1:param: ", p), err) }
+  return err
+}
+
+func (p *BusinessActionClientArgs) String() string {
+  if p == nil {
+    return "<nil>"
+  }
+  return fmt.Sprintf("BusinessActionClientArgs(%+v)", *p)
 }
 
 
