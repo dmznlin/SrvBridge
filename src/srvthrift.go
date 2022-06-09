@@ -1,12 +1,13 @@
+/*Package srvbridge ***********************************************************
+  作者: dmzn@163.com 2022-06-09 13:03:31
+  描述: service for thrift
+******************************************************************************/
 package srvbridge
 
-/******************************************************************************
-作者: dmzn@163.com 2022-05-14
-描述: service for thrift
-******************************************************************************/
 import (
 	. "SrvBridge/src/mit"
 	"context"
+	"errors"
 	"github.com/apache/thrift/lib/go/thrift"
 	. "github.com/dmznlin/znlib-go/znlib"
 	inifile "github.com/go-ini/ini"
@@ -55,11 +56,19 @@ func (ta *thriftAction) Action(ctx context.Context, param *ActionParam) (_r *Act
 	}, nil
 }
 
-func (ta *thriftAction)  ActionClient(ctx context.Context, param *ActionParam) (_err error){
+func (ta *thriftAction) ActionClient(ctx context.Context, param *ActionParam) (_err error) {
 	Info(param.Data)
 	return nil
 }
 
+//--------------------------------------------------------------------------------
+
+//thriftServer thrift服务对象
+var thriftServer *thrift.TSimpleServer = nil
+
+/*StartThriftService 2022-06-09 13:39:10
+  描述: 启动thrift服务
+*/
 func StartThriftService() {
 	cfg := thriftCfg{
 		localIP:   "",
@@ -83,7 +92,26 @@ func StartThriftService() {
 	handler := &thriftAction{}
 	processor := NewBusinessProcessor(handler)
 
-	server := thrift.NewTSimpleServer4(processor, serverTransport, transportFactory, protocolFactory)
+	thriftServer = thrift.NewTSimpleServer4(processor, serverTransport, transportFactory, protocolFactory)
 	Info("thrift service on: " + cfg.localAddr)
-	server.Serve()
+	thriftServer.Serve()
+}
+
+/*StopThriftService 2022-06-09 13:44:26
+  描述: 关闭thrift服务
+*/
+func StopThriftService() (err error) {
+	defer ErrorHandle(false, func(e any) {
+		if e != nil {
+			err = errors.New("stop thrift service failure.")
+		}
+	})
+
+	if thriftServer != nil {
+		thriftServer.Stop()
+		thriftServer = nil
+		Info("thrift service closed.")
+	}
+
+	return nil
 }

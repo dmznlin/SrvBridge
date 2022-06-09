@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/apache/thrift v0.16.0
-	github.com/dmznlin/znlib-go v0.0.2-0.20220514035921-d1635b44b808
+	github.com/dmznlin/znlib-go v0.0.2-0.20220609034320-c170df28b0ba
 	github.com/go-ini/ini v1.66.4
 )
 
@@ -14,9 +14,9 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rifflock/lfshook v0.0.0-20180920164130-b9218ef580f5 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
-	github.com/stretchr/testify v1.4.0 // indirect
-	golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e // indirect
-	gopkg.in/yaml.v2 v2.2.8 // indirect
+	github.com/stretchr/testify v1.7.1 // indirect
+	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
 //replace github.com/dmznlin/znlib-go => D:\Progra~1\MyVCL\go\znlib-go
