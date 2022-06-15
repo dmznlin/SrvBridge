@@ -8,29 +8,49 @@ import (
 	. "SrvBridge/src/mit"
 	"context"
 	"errors"
+	"fmt"
 	"github.com/apache/thrift/lib/go/thrift"
 	. "github.com/dmznlin/znlib-go/znlib"
 	inifile "github.com/go-ini/ini"
 	"net"
 	"strconv"
+	"sync"
 )
 
-//thriftWorker thrift服务对象
-var thriftWorker thriftService
+var (
+	thrift_init sync.Once
+	//thriftWorker thrift服务对象
+	thriftWorker thriftService
+
+	//thriftServer thrift服务器对象
+	thriftServer *thrift.TSimpleServer = nil
+)
 
 func init() {
-	RegisteWorker(thriftWorker)
+	RegistWorker(thriftWorker)
 }
 
-//thriftServer thrift服务器对象
-var thriftServer *thrift.TSimpleServer = nil
+func init_thrift() {
+	thrift_init.Do(func() {
+		if len(Application.HostIP) > 0 {
+			thriftWorker.srvIP = Application.HostIP[0]
+		} else {
+			thriftWorker.srvIP = ""
+		}
+
+		thriftWorker.enable = true
+		thriftWorker.srvPort = 8080
+		thriftWorker.loadConfig() //apply config file
+	})
+}
 
 //--------------------------------------------------------------------------------
 
 type thriftService struct {
-	localIP   string
-	localPort int
-	localAddr string
+	enable  bool
+	srvIP   string
+	srvPort int
+	srvAddr string
 }
 
 func (srv thriftService) WorkName() string {
@@ -41,21 +61,24 @@ func (srv *thriftService) loadConfig() {
 	if FileExists(Application.ConfigFile, false) {
 		ini, err := inifile.Load(Application.ConfigFile)
 		if err != nil {
-			Warn("")
+			Warn("thrift.loadconfig: " + err.Error())
 			return
 		}
 
-		sec := ini.Section("Server")
-		vs := sec.Key("localIP").String()
+		sec := ini.Section("thrift")
+		srv.enable = sec.Key("enable").In("true", []string{"true", "false"}) == "true"
+		//是否启动服务
+
+		vs := StrTrim(sec.Key("srvIP").String())
 		if vs != "" {
-			srv.localIP = vs
+			srv.srvIP = vs
 		}
 
-		vi := sec.Key("localPort").MustInt(0)
+		vi := sec.Key("srvPort").MustInt(0)
 		if vi > 0 {
-			srv.localPort = vi
+			srv.srvPort = vi
 		}
-		srv.localAddr = net.JoinHostPort(srv.localIP, strconv.Itoa(srv.localPort))
+		srv.srvAddr = net.JoinHostPort(srv.srvIP, strconv.Itoa(srv.srvPort))
 	}
 }
 
@@ -63,15 +86,16 @@ func (srv *thriftService) loadConfig() {
   描述: 启动thrift服务
 */
 func (srv thriftService) Start() {
-	srv.localIP = ""
-	srv.localPort = 8080
-	srv.loadConfig() //apply config file
+	init_thrift()
+	if !thriftWorker.enable {
+		return //不启动服务
+	}
 
 	transportFactory := thrift.NewTFramedTransportFactory(thrift.NewTTransportFactory())
 	protocolFactory := thrift.NewTBinaryProtocolFactoryDefault()
 	//protocolFactory := thrift.NewTCompactProtocolFactory()
 
-	serverTransport, err := thrift.NewTServerSocket(srv.localAddr)
+	serverTransport, err := thrift.NewTServerSocket(thriftWorker.srvAddr)
 	if err != nil {
 		Error("thrift.NewTServerSocket failure: " + err.Error())
 		return
@@ -81,7 +105,7 @@ func (srv thriftService) Start() {
 	processor := NewBusinessProcessor(handler)
 
 	thriftServer = thrift.NewTSimpleServer4(processor, serverTransport, transportFactory, protocolFactory)
-	Info("thrift service on: " + srv.localAddr)
+	Info("thrift service on: " + thriftWorker.srvAddr)
 	thriftServer.Serve()
 }
 
@@ -91,14 +115,14 @@ func (srv thriftService) Start() {
 func (srv thriftService) Stop() (err error) {
 	defer ErrorHandle(false, func(e any) {
 		if e != nil {
-			err = errors.New("stop thrift service failure.")
+			err = errors.New(fmt.Sprintf("stop %s failure.", srv.WorkName()))
 		}
 	})
 
 	if thriftServer != nil {
 		thriftServer.Stop()
 		thriftServer = nil
-		Info("thrift service closed.")
+		Info(srv.WorkName() + " closed.")
 	}
 
 	return nil

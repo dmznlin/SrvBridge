@@ -4,8 +4,9 @@ go 1.18
 
 require (
 	github.com/apache/thrift v0.16.0
-	github.com/dmznlin/znlib-go v0.0.2-0.20220609034320-c170df28b0ba
+	github.com/dmznlin/znlib-go v0.0.2-0.20220615085056-de5edb439b47
 	github.com/go-ini/ini v1.66.4
+	github.com/gorilla/websocket v1.5.0
 )
 
 require (

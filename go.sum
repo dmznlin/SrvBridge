@@ -5,10 +5,14 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dmznlin/znlib-go v0.0.2-0.20220609034320-c170df28b0ba h1:r5WEaaP3RS+PfxH3Zh6XaKhY9hZoYsee629j2HMhw78=
 github.com/dmznlin/znlib-go v0.0.2-0.20220609034320-c170df28b0ba/go.mod h1:A4kw6cy8y338Cayhbm/Z94JxhKxOtS1voN7iiTfCuN8=
+github.com/dmznlin/znlib-go v0.0.2-0.20220615085056-de5edb439b47 h1:Qyvd2bR3x3MyQXJ4cEn01nQasUByHU0r8eWc6d87zDU=
+github.com/dmznlin/znlib-go v0.0.2-0.20220615085056-de5edb439b47/go.mod h1:A4kw6cy8y338Cayhbm/Z94JxhKxOtS1voN7iiTfCuN8=
 github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239 h1:Ghm4eQYC0nEPnSJdVkTrXpu9KtoVCSo1hg7mtI7G9KU=
 github.com/go-ini/ini v1.66.4 h1:dKjMqkcbkzfddhIhyglTPgMoJnkvmG+bSLrU9cTHc5M=
 github.com/go-ini/ini v1.66.4/go.mod h1:ByCAeIL28uOIIG0E3PJtZPDL8WnHpFKFOtgjp+3Ies8=
 github.com/golang/mock v1.5.0/go.mod h1:CWnOUgYIOo4TcNZ0wHX3YZCqsaM1I1Jvs6v3mP3KVu8=
+github.com/gorilla/websocket v1.5.0 h1:PPwGk2jz7EePpoHN/+ClbZu8SPxiqlu12wZP/3sWmnc=
+github.com/gorilla/websocket v1.5.0/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869 h1:IPJ3dvxmJ4uczJe5YQdrYB16oTJlGSC/OyZDqUk9xX4=
 github.com/jonboulle/clockwork v0.3.0 h1:9BSCMi8C+0qdApAp4auwX0RkLGUjs956h0EkuQymUhg=
 github.com/lestrrat/go-envload v0.0.0-20180220120943-6ed08b54a570 h1:0iQektZGS248WXmGIYOwRXSQhD4qn3icjMpuxwO7qlo=

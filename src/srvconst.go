@@ -6,6 +6,7 @@ package srvbridge
 
 import (
 	"context"
+	"github.com/dmznlin/znlib-go/znlib"
 	"sync"
 )
 
@@ -16,7 +17,7 @@ type ServiceWorker interface {
 }
 
 var (
-	SyncLock       sync.RWMutex    //全局同步锁
+	global_init    sync.Once       //全局初始化
 	ServiceWorkers []ServiceWorker //服务对象列表
 
 	ServiceContext context.Context    //服务上下文
@@ -24,16 +25,24 @@ var (
 )
 
 func init() {
-	ServiceWorkers = make([]ServiceWorker, 0, 5)
-	ServiceContext, ServiceCancel = context.WithCancel(context.Background())
+	Init_global()
 }
 
-/*RegisteWorker 2022-06-10 10:33:08
+func Init_global() {
+	global_init.Do(func() {
+		ServiceWorkers = make([]ServiceWorker, 0, 5)
+		ServiceContext, ServiceCancel = context.WithCancel(context.Background())
+	})
+}
+
+/*RegistWorker 2022-06-10 10:33:08
   参数: sw,服务对象
   描述: 注册一个服务对象
 */
-func RegisteWorker(sw ServiceWorker) {
-	SyncLock.Lock()
-	defer SyncLock.Unlock()
+func RegistWorker(sw ServiceWorker) {
+	znlib.Application.SyncLock.Lock()
+	defer znlib.Application.SyncLock.Unlock()
+
+	Init_global()
 	ServiceWorkers = append(ServiceWorkers, sw)
 }
