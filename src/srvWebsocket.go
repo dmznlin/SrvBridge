@@ -94,8 +94,8 @@ func (ws srvWebSocket) Start() {
 		return //不启动服务
 	}
 
-	go hub.run()
-	http.HandleFunc(websocketWorker.webPath, wsHandle) //将请求交给wshandle处理
+	go wsHub.run()
+	http.HandleFunc(websocketWorker.webPath, wsHandle) //将请求交给wsHandle处理
 
 	websocketServer = &http.Server{Addr: websocketWorker.srvAddr, Handler: nil}
 	Info("websocket service on: " + websocketWorker.srvAddr)
@@ -116,28 +116,8 @@ func (ws srvWebSocket) Stop() (err error) {
 	return nil
 }
 
-//--------------------------------------------------------------------------------
-
-//定义一个websocket处理器，用于收集消息和广播消息
-type Hub struct {
-	//用户列表，保存所有用户
-	userList map[*User]bool
-	//注册chan，用户注册时添加到chan中
-	register chan *User
-	//注销chan，用户退出时添加到chan中，再从map中删除
-	unregister chan *User
-	//广播消息，将消息广播给所有连接
-	broadcast chan []byte
-}
-
-//定义一个websocket连接对象，连接中包含每个连接的信息
-type User struct {
-	conn *websocket.Conn
-	msg  chan []byte
-}
-
-//定义一个升级器，将普通的http连接升级为websocket连接
-var up = &websocket.Upgrader{
+//将普通的http连接升级为websocket连接
+var wsUpgrader = &websocket.Upgrader{
 	//定义读写缓冲区大小
 	WriteBufferSize: 1024,
 	ReadBufferSize:  1024,
@@ -145,12 +125,12 @@ var up = &websocket.Upgrader{
 	CheckOrigin: func(r *http.Request) bool {
 		//如果不是get请求，返回错误
 		if r.Method != "GET" {
-			fmt.Println("请求方式错误")
+			Info(fmt.Sprintf("%s: Host [%s] 请求方式错误", websocketWorker.WorkName(), r.Host))
 			return false
 		}
 		//如果路径中不包括chat，返回错误
 		if r.URL.Path != websocketWorker.webPath {
-			fmt.Println("请求路径错误")
+			Info(fmt.Sprintf("%s: Host [%s] 请求路径错误", websocketWorker.WorkName(), r.Host))
 			return false
 		}
 		//还可以根据其他需求定制校验规则
@@ -158,86 +138,102 @@ var up = &websocket.Upgrader{
 	},
 }
 
-//初始化处理中心，以便调用
-var hub = &Hub{
-	userList:   make(map[*User]bool),
-	register:   make(chan *User),
-	unregister: make(chan *User),
-	broadcast:  make(chan []byte),
-}
-
 func wsHandle(w http.ResponseWriter, r *http.Request) {
 	//通过升级后的升级器得到链接
-	conn, err := up.Upgrade(w, r, nil)
+	conn, err := wsUpgrader.Upgrade(w, r, nil)
 	if err != nil {
-		fmt.Println("获取连接失败:", err)
+		Info(fmt.Sprintf("%s: Host [%s] 获取连接失败[%s]", websocketWorker.WorkName(), r.Host, err.Error()))
 		return
 	}
+
 	//连接成功后注册用户
-	user := &User{
+	client := &wsClient{
 		conn: conn,
 		msg:  make(chan []byte),
 	}
-	hub.register <- user
+
+	wsHub.register <- client
 	defer func() {
-		hub.unregister <- user
+		wsHub.unregister <- client
 	}()
-	//得到连接后，就可以开始读写数据了
-	go read(user)
-	write(user)
+
+	//读写数据
+	go read(client)
+	write(client)
 }
 
-func read(user *User) {
+//--------------------------------------------------------------------------------
+
+//websocket处理器
+type websocketHub struct {
+	clientList map[*wsClient]bool //客户端列表
+	register   chan *wsClient     //客户端注册
+	unregister chan *wsClient     //客户端注销
+	broadcast  chan []byte        //待广播数据
+}
+
+//初始化处理中心
+var wsHub = &websocketHub{
+	clientList: make(map[*wsClient]bool),
+	register:   make(chan *wsClient),
+	unregister: make(chan *wsClient),
+	broadcast:  make(chan []byte),
+}
+
+//处理中心处理获取到的信息
+func (hub *websocketHub) run() {
+loop:
+	for {
+		select {
+		case <-ServiceContext.Done(): //退出服务
+			break loop
+		case client := <-hub.register: //注册客户端
+			hub.clientList[client] = true
+		case client := <-hub.unregister: //清理客户端
+			if _, ok := hub.clientList[client]; ok {
+				delete(hub.clientList, client)
+			}
+		case data := <-hub.broadcast: //广播数据
+			for client := range hub.clientList {
+				select {
+				case client.msg <- data:
+				default:
+					delete(hub.clientList, client)
+					close(client.msg)
+				}
+			}
+		}
+	}
+}
+
+//--------------------------------------------------------------------------------
+
+//定义一个websocket连接对象，连接中包含每个连接的信息
+type wsClient struct {
+	conn *websocket.Conn
+	msg  chan []byte
+}
+
+func read(user *wsClient) {
 	//从连接中循环读取信息
 	for {
 		_, msg, err := user.conn.ReadMessage()
 		if err != nil {
-			fmt.Println("用户退出:", user.conn.RemoteAddr().String())
-			hub.unregister <- user
+			Info(fmt.Sprintf("%s: Host [%s] 用户退出[%s]", websocketWorker.WorkName(), user.conn.RemoteAddr().String(), err.Error()))
+			wsHub.unregister <- user
 			break
 		}
 		//将读取到的信息传入websocket处理器中的broadcast中，
-		hub.broadcast <- msg
+		wsHub.broadcast <- msg
 	}
 }
 
-func write(user *User) {
+func write(user *wsClient) {
 	for data := range user.msg {
 		err := user.conn.WriteMessage(1, data)
 		if err != nil {
-			fmt.Println("写入错误")
+			Info(fmt.Sprintf("%s: Host [%s] 写入错误[%s]", websocketWorker.WorkName(), user.conn.RemoteAddr().String(), err.Error()))
 			break
-		}
-	}
-}
-
-//处理中心处理获取到的信息
-func (h *Hub) run() {
-loop:
-	for {
-		select {
-		//退出循环
-		case <-ServiceContext.Done():
-			break loop
-		//从注册chan中取数据
-		case user := <-h.register:
-			//取到数据后将数据添加到用户列表中
-			h.userList[user] = true
-		case user := <-h.unregister:
-			//从注销列表中取数据，判断用户列表中是否存在这个用户，存在就删掉
-			if _, ok := h.userList[user]; ok {
-				delete(h.userList, user)
-			}
-		case data := <-h.broadcast:
-			//从广播chan中取消息，然后遍历给每个用户，发送到用户的msg中
-			for u := range h.userList {
-				select {
-				case u.msg <- data:
-				default:
-					delete(h.userList, u)
-					close(u.msg)
-				}
-			}
 		}
 	}
 }
