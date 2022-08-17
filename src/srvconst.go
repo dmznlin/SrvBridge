@@ -8,68 +8,12 @@ import (
 	"context"
 	"encoding/json"
 	. "github.com/dmznlin/znlib-go/znlib"
-	inifile "github.com/go-ini/ini"
+	"github.com/go-ini/ini"
 	"math/rand"
 	"strconv"
-	"sync"
-	"time"
 )
 
-var (
-	ServerName     string          //服务实例名称
-	global_init    sync.Once       //全局初始化
-	ServiceWorkers []ServiceWorker //服务对象列表
-
-	ServiceContext context.Context    //服务上下文
-	ServiceCancel  context.CancelFunc //取消上下文
-)
-
-func init() {
-	Init_global()
-}
-
-func Init_global() {
-	global_init.Do(func() {
-		rnd := rand.New(rand.NewSource(time.Now().UnixNano()))
-		ServerName = "ServiceBridge" + strconv.Itoa(rnd.Int())
-
-		ServiceWorkers = make([]ServiceWorker, 0, 5)
-		ServiceContext, ServiceCancel = context.WithCancel(context.Background())
-
-		if FileExists(Application.ConfigFile, false) {
-			ini, err := inifile.Load(Application.ConfigFile)
-			if err == nil {
-				str := StrTrim(ini.Section("config").Key("ServerName").String())
-				if str != "" {
-					ServerName = str
-				}
-			} else {
-				Error("Init_global.loadconfig: " + err.Error())
-			}
-		}
-	})
-}
-
-/*RegistWorker 2022-06-10 10:33:08
-  参数: sw,服务对象
-  描述: 注册一个服务对象
-*/
-func RegistWorker(sw ServiceWorker) {
-	Application.SyncLock.Lock()
-	defer Application.SyncLock.Unlock()
-
-	Init_global()
-	ServiceWorkers = append(ServiceWorkers, sw)
-}
-
-//--------------------------------------------------------------------------------
-
-type ServiceWorker interface {
-	WorkName() string //服务名称
-	Start()           //启动函数
-	Stop() error      //停止函数
-}
-
+//ServiceType 支持的桥接服务类型
 type ServiceType = uint8
 
 const (
@@ -78,8 +22,68 @@ const (
 	Srv_zookeeper                    //zookeeper
 )
 
-const TrancertTag = ";;;"
-const TrancertTagLen = len(TrancertTag)
+//ServiceWorker 服务提供者
+type ServiceWorker interface {
+	WorkName() string     //服务名称
+	LoadConfig(*ini.File) //加载配置
+	Start()               //启动函数
+	Stop() error          //停止函数
+}
+
+var (
+	ServerName     string             //服务实例名称
+	ServiceWorkers []ServiceWorker    //服务对象列表
+	ServiceContext context.Context    //服务上下文
+	ServiceCancel  context.CancelFunc //取消上下文
+)
+
+//初始化znlib库,且在各单元init()前初始化全局变量
+var _ = InitLib(nil, func() {
+	ServerName = "ServiceBridge" + strconv.Itoa(rand.Int())
+	ServiceWorkers = make([]ServiceWorker, 0, 5)
+	ServiceContext, ServiceCancel = context.WithCancel(context.Background())
+})
+
+/*RegistWorker 2022-06-10 10:33:08
+  参数: sw,服务对象
+  描述: 注册一个服务对象
+*/
+func RegistWorker(sw ServiceWorker) {
+	Application.SyncLock.Lock()
+	defer Application.SyncLock.Unlock()
+	ServiceWorkers = append(ServiceWorkers, sw)
+}
+
+/*LoadWorkersConfig 2022-08-17 16:13:02
+  描述: 载入配置信息
+*/
+func LoadWorkersConfig() {
+	if FileExists(Application.ConfigFile, false) == false {
+		return
+	}
+
+	cfg, err := ini.Load(Application.ConfigFile)
+	if err != nil {
+		Warn(ErrorMsg(err, "SrvBridge.LoadWorkersConfig"))
+		return
+	}
+
+	str := StrTrim(cfg.Section("config").Key("ServerName").String())
+	if str != "" {
+		ServerName = str
+	}
+
+	for _, worker := range ServiceWorkers {
+		worker.LoadConfig(cfg)
+	}
+}
+
+//--------------------------------------------------------------------------------
+
+const (
+	TrancertTag    = ";;;" //
+	TrancertTagLen = len(TrancertTag)
+)
 
 type ServiceData struct {
 	SrvType  ServiceType `json:"SrvType" xml:"SrvType"`   //服务类型

@@ -11,6 +11,9 @@ import (
 )
 
 func main() {
+	LoadWorkersConfig()
+	//load config first
+
 	var rg *threading.RoutineGroup
 	rg = threading.NewRoutineGroup()
 	//service works in routine group
